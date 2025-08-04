@@ -2,43 +2,54 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Flashing Text Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, orientation=landscape" />
+  <title>Flashing Text</title>
   <style>
-    body, html {
-      margin:0; padding:0;
+    html, body {
+      margin: 0; padding: 0;
+      height: 100vh;
       font-family: Arial, sans-serif;
-      height:100vh; display:flex;
-      flex-direction:column;
-      background-color:white; color:black;
+      display: flex;
+      flex-direction: column;
+      background-color: white;
+      color: black;
       transition: background-color 0.5s, color 0.5s;
+      overflow: hidden;
     }
     .input-area {
-      padding:20px; background:#f0f0f0;
-      text-align:center;
+      padding: 20px;
+      background: #f0f0f0;
+      text-align: center;
     }
     input[type="text"] {
-      padding:10px; font-size:1.2rem;
-      width:80%; max-width:400px;
+      padding: 10px;
+      font-size: 1.2rem;
+      width: 80%;
+      max-width: 400px;
     }
     button {
-      padding:10px 20px; font-size:1rem;
-      margin-left:10px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      margin-left: 10px;
     }
     .flash-display {
-      flex-grow:1;
-      display:flex; align-items:center;
-      justify-content:center; font-size:4rem;
-      text-align:center;
-      transition: background-color 0.5s, color 0.5s;
+      flex-grow: 1;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 4rem;
+      text-align: center;
+      padding: 20px;
     }
-    @media(max-width:600px) {
-      .flash-display { font-size:6rem; }
+    @media (max-width: 768px) {
+      .flash-display {
+        font-size: 5rem;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="input-area">
+  <div class="input-area" id="inputArea">
     <input type="text" id="textInput" placeholder="Enter your message..." />
     <button onclick="startFlashing()">Show</button>
   </div>
@@ -48,29 +59,42 @@
     let intervalId;
 
     async function startFlashing() {
-      const text = document.getElementById("textInput").value || "";
+      const text = document.getElementById("textInput").value.trim();
+      if (!text) return;
+
       const flashArea = document.getElementById("flashArea");
       flashArea.textContent = text;
 
-      if (intervalId) clearInterval(intervalId);
+      // Hide input area and show display
+      document.getElementById("inputArea").style.display = "none";
+      flashArea.style.display = "flex";
 
-      // Fullscreen if available
-      const docEl = document.documentElement;
-      if (docEl.requestFullscreen) {
-        try { await docEl.requestFullscreen(); } catch(e){}
+      // Attempt fullscreen
+      const el = document.documentElement;
+      if (el.requestFullscreen) {
+        await el.requestFullscreen();
+      } else if (el.webkitRequestFullscreen) {
+        await el.webkitRequestFullscreen();
       }
 
+      // Lock screen orientation to landscape (if supported)
+      if (screen.orientation && screen.orientation.lock) {
+        try {
+          await screen.orientation.lock("landscape");
+        } catch (e) {
+          console.warn("Orientation lock failed:", e);
+        }
+      }
+
+      // Start flashing
       let isBlack = true;
       intervalId = setInterval(() => {
         isBlack = !isBlack;
-        if (isBlack) {
-          document.body.style.backgroundColor = "white";
-          document.body.style.color = "black";
-        } else {
-          document.body.style.backgroundColor = "black";
-          document.body.style.color = "white";
-        }
-      }, 400); // faster: 400ms interval
+        document.body.style.backgroundColor = isBlack ? "white" : "black";
+        document.body.style.color = isBlack ? "black" : "white";
+        flashArea.style.backgroundColor = isBlack ? "white" : "black";
+        flashArea.style.color = isBlack ? "black" : "white";
+      }, 400);
     }
   </script>
 </body>
